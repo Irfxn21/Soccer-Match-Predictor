@@ -22,4 +22,25 @@ preds = rf.predict(test[predictors])
 acc = accuracy_score(test["target"],preds)
 combined = pd.DataFrame(dict(actual=test["target"], prediction=preds))
 pd.crosstab(index=combined["actual"], columns=combined["prediction"])
-print(precision_score(test["target"],preds))
+
+from sklearn.metrics import precision_score
+
+grouped_matches = matches.groupby("team")
+
+#group = grouped_matches.get_group("Manchester City")
+
+def rolling_averages(group, cols, new_cols):
+    group = group.sort_values("date")
+    rolling_stats = group[cols].rolling(3, closed='left').mean()
+    group[new_cols] = rolling_stats
+    group = group.dropna(subset=new_cols)
+    return group
+
+cols = ["gf", "ga", "sh", "sot", "dist", "fk", "pk", "pkatt"]
+new_cols = [f"{c}_rolling" for c in cols]
+
+matches_rolling = matches.groupby("team").apply(lambda x: rolling_averages(x, cols, new_cols))
+matches_rolling = matches_rolling.droplevel('team')
+matches_rolling.index = range(matches_rolling.shape[0])
+print(matches_rolling)
+
