@@ -56,5 +56,20 @@ combined, precision = make_predictions(matches_rolling, predictors + new_cols)
 
 combined = combined.merge(matches_rolling[["date", "team", "opponent", "result"]], left_index=True, right_index=True)
 
-print(combined)
+class MissingDict(dict):
+    __missing__ = lambda self, key: key
+    
+map_values = {"Brighton and Hove Albion": "Brighton",
+              "Manchester United": "Manchester Utd",
+              "Newcastle United": "Newcastle Utd",
+              "Tottenham Hotspur": "Tottenham",
+              "West Ham United": "West Ham",
+              "Wolverhampton Wanderers": "Wolves"
+}
+mapping = MissingDict(**map_values)
 
+combined["new_team"] = combined["team"].map(mapping)
+
+merged = combined.merge(combined, left_on=["date", "new_team"], right_on=["date", "opponent"])
+
+print(merged[(merged["prediction_x"] == 1) & (merged["prediction_y"] ==0)]["actual_x"].value_counts())
